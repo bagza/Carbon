@@ -43,46 +43,47 @@ public class PagerTabStrip extends HorizontalScrollView {
             position = (int) Math.round(position + positionOffset);
             if (position != selectedPage) {
                 View view = content.getChildAt(position);
+                if (view != null) {
+                    if (animator != null)
+                        animator.cancel();
+                    if (animator2 != null)
+                        animator2.cancel();
 
-                if (animator != null)
-                    animator.cancel();
-                if (animator2 != null)
-                    animator2.cancel();
+                    animator = ValueAnimator.ofFloat(indicatorPos, view.getLeft());
+                    animator.setDuration(200);
+                    if (position > selectedPage)
+                        animator.setStartDelay(100);
+                    animator.setInterpolator(decelerateInterpolator);
+                    animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                        @Override
+                        public void onAnimationUpdate(ValueAnimator animation) {
+                            indicatorPos = (float) animation.getAnimatedValue();
+                            postInvalidate();
+                        }
+                    });
+                    animator.start();
 
-                animator = ValueAnimator.ofFloat(indicatorPos, view.getLeft());
-                animator.setDuration(200);
-                if (position > selectedPage)
-                    animator.setStartDelay(100);
-                animator.setInterpolator(decelerateInterpolator);
-                animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-                    @Override
-                    public void onAnimationUpdate(ValueAnimator animation) {
-                        indicatorPos = (float) animation.getAnimatedValue();
-                        postInvalidate();
+                    animator2 = ValueAnimator.ofFloat(indicatorPos2, view.getRight());
+                    animator2.setDuration(200);
+                    if (position < selectedPage)
+                        animator2.setStartDelay(100);
+                    animator2.setInterpolator(decelerateInterpolator);
+                    animator2.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                        @Override
+                        public void onAnimationUpdate(ValueAnimator animation) {
+                            indicatorPos2 = (float) animation.getAnimatedValue();
+                            postInvalidate();
+                        }
+                    });
+                    animator2.start();
+
+                    setSelectedPage(position);
+
+                    if (content.getChildAt(selectedPage).getLeft() - getScrollX() < 0) {
+                        smoothScrollTo(content.getChildAt(selectedPage).getLeft(), 0);
+                    } else if (content.getChildAt(selectedPage).getRight() - getScrollX() > getWidth()) {
+                        smoothScrollTo(content.getChildAt(selectedPage).getRight() - getWidth(), 0);
                     }
-                });
-                animator.start();
-
-                animator2 = ValueAnimator.ofFloat(indicatorPos2, view.getRight());
-                animator2.setDuration(200);
-                if (position < selectedPage)
-                    animator2.setStartDelay(100);
-                animator2.setInterpolator(decelerateInterpolator);
-                animator2.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-                    @Override
-                    public void onAnimationUpdate(ValueAnimator animation) {
-                        indicatorPos2 = (float) animation.getAnimatedValue();
-                        postInvalidate();
-                    }
-                });
-                animator2.start();
-
-                setSelectedPage(position);
-
-                if (content.getChildAt(selectedPage).getLeft() - getScrollX() < 0) {
-                    smoothScrollTo(content.getChildAt(selectedPage).getLeft(), 0);
-                } else if (content.getChildAt(selectedPage).getRight() - getScrollX() > getWidth()) {
-                    smoothScrollTo(content.getChildAt(selectedPage).getRight() - getWidth(), 0);
                 }
             }
         }
@@ -149,14 +150,16 @@ public class PagerTabStrip extends HorizontalScrollView {
         if (adapter == null)
             return;
 
-        tabBuilder = new TabBuilder() {
-            @Override
-            public View getView(int position) {
-                View tab = inflate(getContext(), R.layout.carbon_tab, null);
-                ((TextView) tab.findViewById(R.id.carbon_tabText)).setText(adapter.getPageTitle(position).toString().toUpperCase());
-                return tab;
-            }
-        };
+        if (tabBuilder == null) {
+            tabBuilder = new TabBuilder() {
+                @Override
+                public View getView(int position) {
+                    View tab = inflate(getContext(), R.layout.carbon_tab, null);
+                    ((TextView) tab.findViewById(R.id.carbon_tabText)).setText(getViewPager().getAdapter().getPageTitle(position).toString().toUpperCase());
+                    return tab;
+                }
+            };
+        }
 
         for (int i = 0; i < adapter.getCount(); i++) {
             View tab = tabBuilder.getView(i);
@@ -219,9 +222,11 @@ public class PagerTabStrip extends HorizontalScrollView {
     }
 
     public void setSelectedPage(int position) {
-        content.getChildAt(selectedPage).setSelected(false);
+        View prev = content.getChildAt(selectedPage);
+        if (prev != null) prev.setSelected(false);
         selectedPage = position;
-        content.getChildAt(selectedPage).setSelected(true);
+        View selected = content.getChildAt(selectedPage);
+        if (selected != null) prev.setSelected(false);
     }
 
     @Override

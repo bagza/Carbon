@@ -139,8 +139,8 @@ public class EdgeEffect {
         if (mPullDistance == 0) {
             mGlowScaleY = mGlowScaleYStart = 0;
         } else {
-            final float scale = Math.max(0, 1 - 1 /
-                    FloatMath.sqrt(Math.abs(mPullDistance) * mBounds.height()) - 0.3f) / 0.7f;
+            final float scale = (float) Math.max(0, 1 - 1 /
+                    Math.sqrt(Math.abs(mPullDistance) * mBounds.height()) - 0.3f) / 0.7f;
 
             mGlowScaleY = mGlowScaleYStart = scale;
         }
